@@ -11,6 +11,23 @@ const SPRITE_SCALE_FACTOR: f32 = 3.0;
 
 //colors
 const BG_COLOR: (u8, u8, u8) = (197, 204, 184);
+
+//Game State
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, States)]
+enum GameState {
+    #[default]
+    Loading,
+    GameInit,
+    InGame,
+}
+
+//Resources
+#[derive(Resource)]
+struct GlobalTextureAtlasHandle(Option<Handle<TextureAtlasLayout>>);
+
+#[derive(Resource)]
+struct GlobalSpriteSheetHandle(Option<Handle<Image>>);
+
 fn main() {
     App::new()
         .add_plugins(
@@ -26,23 +43,29 @@ fn main() {
                     ..Default::default()
                 }),
         )
-        .add_systems(Startup, (setup_camera, spawn_player))
+        //state
+        .init_state::<GameState>()
+        //system
+        .add_systems(OnEnter(GameState::GameInit), (setup_camera, init_world))
+        .add_systems(OnEnter(GameState::Loading), load_assets)
+        //custom resources
+        .insert_resource(GlobalTextureAtlasHandle(None))
+        .insert_resource(GlobalSpriteSheetHandle(None))
+        //resources
         .insert_resource(ClearColor(Color::srgb_u8(
             BG_COLOR.0, BG_COLOR.1, BG_COLOR.2,
         )))
         .run();
 }
 
-fn setup_camera(mut commands: Commands) {
-    commands.spawn((Camera2d, Msaa::Off));
-}
-
-fn spawn_player(
+fn load_assets(
     assets_server: Res<AssetServer>,
+    mut texture_atlas: ResMut<GlobalTextureAtlasHandle>,
+    mut image_handle: ResMut<GlobalSpriteSheetHandle>,
     mut texture_atlas_layout: ResMut<Assets<TextureAtlasLayout>>,
-    mut commands: Commands,
+    mut next_state: ResMut<NextState<GameState>>,
 ) {
-    let texture: Handle<Image> = assets_server.load(SPRITE_SHEET_PATH);
+    image_handle.0 = Some(assets_server.load(SPRITE_SHEET_PATH));
     let layout = TextureAtlasLayout::from_grid(
         UVec2::new(TILE_W, TILE_H),
         SPRITE_SHEET_W,
@@ -50,12 +73,23 @@ fn spawn_player(
         None,
         None,
     );
-    let texture_atlas_layout = texture_atlas_layout.add(layout);
+    texture_atlas.0 = Some(texture_atlas_layout.add(layout));
+    next_state.set(GameState::GameInit);
+}
+fn setup_camera(mut commands: Commands) {
+    commands.spawn((Camera2d, Msaa::Off));
+}
+
+fn init_world(
+    mut commands: Commands,
+    texture_atlas: Res<GlobalTextureAtlasHandle>,
+    image_handler: Res<GlobalSpriteSheetHandle>,
+) {
     commands.spawn((
         Sprite::from_atlas_image(
-            texture,
+            image_handler.0.clone().unwrap(),
             TextureAtlas {
-                layout: texture_atlas_layout,
+                layout: texture_atlas.0.clone().unwrap(),
                 index: 0,
             },
         ),
