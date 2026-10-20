@@ -11,7 +11,8 @@ const SPRITE_SCALE_FACTOR: f32 = 3.0;
 
 //colors
 const BG_COLOR: (u8, u8, u8) = (197, 204, 184);
-
+//player
+const PLAYER_SPEED: f32 = 200.0;
 //Game State
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, States)]
 enum GameState {
@@ -20,7 +21,6 @@ enum GameState {
     GameInit,
     InGame,
 }
-
 //Resources
 #[derive(Resource)]
 struct GlobalTextureAtlasHandle(Option<Handle<TextureAtlasLayout>>);
@@ -28,6 +28,9 @@ struct GlobalTextureAtlasHandle(Option<Handle<TextureAtlasLayout>>);
 #[derive(Resource)]
 struct GlobalSpriteSheetHandle(Option<Handle<Image>>);
 
+//componets
+#[derive(Component)]
+struct Player;
 fn main() {
     App::new()
         .add_plugins(
@@ -48,6 +51,10 @@ fn main() {
         //system
         .add_systems(OnEnter(GameState::GameInit), (setup_camera, init_world))
         .add_systems(OnEnter(GameState::Loading), load_assets)
+        .add_systems(
+            Update,
+            (handle_player_input).run_if(in_state(GameState::InGame)),
+        )
         //custom resources
         .insert_resource(GlobalTextureAtlasHandle(None))
         .insert_resource(GlobalSpriteSheetHandle(None))
@@ -84,6 +91,7 @@ fn init_world(
     mut commands: Commands,
     texture_atlas: Res<GlobalTextureAtlasHandle>,
     image_handler: Res<GlobalSpriteSheetHandle>,
+    mut next_state: ResMut<NextState<GameState>>,
 ) {
     commands.spawn((
         Sprite::from_atlas_image(
@@ -94,5 +102,43 @@ fn init_world(
             },
         ),
         Transform::from_scale(Vec3::splat(SPRITE_SCALE_FACTOR)),
+        Player,
     ));
+    next_state.set(GameState::InGame);
+}
+
+fn handle_player_input(
+    keyboard_input: Res<ButtonInput<KeyCode>>,
+    mut player_query: Query<&mut Transform, With<Player>>,
+    time: Res<Time>,
+) {
+    let Ok(mut transform) = player_query.single_mut() else {
+        return;
+    };
+    let w_key = keyboard_input.pressed(KeyCode::KeyW) || keyboard_input.pressed(KeyCode::ArrowUp);
+    let a_key = keyboard_input.pressed(KeyCode::KeyA) || keyboard_input.pressed(KeyCode::ArrowLeft);
+    let s_key = keyboard_input.pressed(KeyCode::KeyS) || keyboard_input.pressed(KeyCode::ArrowDown);
+    let d_key =
+        keyboard_input.pressed(KeyCode::KeyD) || keyboard_input.pressed(KeyCode::ArrowRight);
+    let mut delta = Vec2::ZERO;
+    if w_key {
+        delta.y += 1.0;
+    }
+    if a_key {
+        delta.x -= 1.0;
+    }
+    if s_key {
+        delta.y -= 1.0;
+    }
+    if d_key {
+        delta.x += 1.0;
+    }
+    //normalize vector
+    if delta.length() > 0.0 {
+        delta = delta.normalize();
+    }
+    if delta.is_finite() && (w_key || s_key || a_key || d_key) {
+        transform.translation +=
+            Vec3::new(delta.x, delta.y, 0.0) * PLAYER_SPEED * time.delta_secs();
+    }
 }
