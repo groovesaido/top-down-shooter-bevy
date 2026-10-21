@@ -10,7 +10,9 @@ const TILE_H: u32 = 16;
 const SPRITE_SHEET_W: u32 = 4;
 const SPRITE_SHEET_H: u32 = 4;
 const SPRITE_SCALE_FACTOR: f32 = 3.0;
+//bullet
 const BULLET_SPAWN_INTERVAL: f32 = 0.1;
+const BULLET_SPEED: f32 = 300.0;
 //colors
 const BG_COLOR: (u8, u8, u8) = (197, 204, 184);
 //player
@@ -42,6 +44,8 @@ struct Gun;
 struct Bullet;
 #[derive(Component)]
 struct GunTimer(Stopwatch);
+#[derive(Component)]
+struct BulletDirection(Vec3);
 fn main() {
     App::new()
         .add_plugins(
@@ -69,6 +73,7 @@ fn main() {
                 update_gun_transform,
                 update_cursor_position,
                 handle_gun_input,
+                update_bullets,
             )
                 .run_if(in_state(GameState::InGame)),
         )
@@ -242,6 +247,8 @@ fn handle_gun_input(
     if !mouse_btn_input.pressed(MouseButton::Left) {
         return;
     }
+    let bullet_direction = gun_transform.local_x();
+
     if gun_timer.0.elapsed_secs() >= BULLET_SPAWN_INTERVAL {
         gun_timer.0.reset();
         commands.spawn((
@@ -255,6 +262,20 @@ fn handle_gun_input(
             Transform::from_translation(Vec3::new(gun_pos.x, gun_pos.y, 1.0))
                 .with_scale(Vec3::splat(SPRITE_SCALE_FACTOR)),
             Bullet,
+            BulletDirection(*bullet_direction),
         ));
+    }
+}
+
+fn update_bullets(
+    mut bullet_query: Query<(&mut Transform, &BulletDirection), With<Bullet>>,
+    time: Res<Time>,
+) {
+    if bullet_query.is_empty() {
+        return;
+    }
+    for (mut t, dir) in bullet_query.iter_mut() {
+        t.translation += dir.0.normalize() * BULLET_SPEED * time.delta_secs();
+        t.translation.z = 10.0;
     }
 }
