@@ -18,3 +18,8 @@ pub const WORLD_H: f32 = 2500.0;
 pub const BG_COLOR: (u8, u8, u8) = (197, 204, 184);
 //player
 pub const PLAYER_SPEED: f32 = 200.0;
+
+//Enemy
+pub const MAX_OF_ENEMIES: usize = 500;
+pub const ENEMY_SPAWN_INTERVAL: f32 = 1.0;
+pub const ENEMY_SPEED: f32 = 150.0;

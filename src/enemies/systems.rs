@@ -1,0 +1,56 @@
+use bevy::prelude::*;
+use rand::RngExt;
+
+use crate::{constants::*, enemies::components::Enemy, player::component::Player, resources::*};
+
+pub fn spawn_enemies(
+    mut commands: Commands,
+    texture_atlas: ResMut<GlobalTextureAtlasHandle>,
+    image_handler: ResMut<GlobalSpriteSheetHandle>,
+    player_query: Query<&Transform, With<Player>>,
+    mut enemy_query: Query<&mut Transform, (With<Enemy>, Without<Player>)>,
+) {
+    let Ok(player_transform) = player_query.single() else {
+        return;
+    };
+
+    let num_enemies = enemy_query.iter().len();
+    let enemy_spawn_count = (MAX_OF_ENEMIES - num_enemies).min(10);
+    if num_enemies > MAX_OF_ENEMIES {
+        return;
+    }
+    let mut rng = rand::rng();
+    let x = rng.random_range(-WORLD_W..WORLD_W);
+    let y = rng.random_range(-WORLD_H..WORLD_H);
+
+    for _ in 0..enemy_spawn_count {
+        commands.spawn((
+            Sprite::from_atlas_image(
+                image_handler.0.clone().unwrap(),
+                TextureAtlas {
+                    layout: texture_atlas.0.clone().unwrap(),
+                    index: 1,
+                },
+            ),
+            Transform::from_translation(Vec3::new(x, y, 1.0))
+                .with_scale(Vec3::splat(SPRITE_SCALE_FACTOR)),
+            Enemy,
+        ));
+    }
+}
+
+pub fn update_enemy_transform(
+    mut enemy_query: Query<&mut Transform, (With<Enemy>, Without<Player>)>,
+    player_query: Query<&Transform, With<Player>>,
+    time: Res<Time>,
+) {
+    let Ok(player_transform) = player_query.single() else {
+        return;
+    };
+    let player_pos = player_transform.translation;
+
+    for mut transform in enemy_query.iter_mut() {
+        let dir = (player_pos - transform.translation).normalize();
+        transform.translation += dir * ENEMY_SPEED * time.delta_secs();
+    }
+}

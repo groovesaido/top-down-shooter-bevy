@@ -1,10 +1,12 @@
 mod bullet;
 mod constants;
+mod enemies;
 mod gun;
 mod player;
 mod resources;
 mod states;
 mod world;
+use crate::enemies::EnemyPlugin;
 use crate::states::*;
 use crate::world::WorldPlugins;
 use crate::{bullet::BulletPlugins, gun::GunPlugin, player::PlayerPlugins};
@@ -35,6 +37,7 @@ fn main() {
             BulletPlugins,
             WorldPlugins,
             ResourePlugin,
+            EnemyPlugin,
             PanCamPlugin::default(),
         ))
         //states
