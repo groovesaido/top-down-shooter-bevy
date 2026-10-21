@@ -1,6 +1,8 @@
 use std::f32::consts::PI;
 
 use bevy::{prelude::*, time::Stopwatch, window::PrimaryWindow};
+use bevy_pancam::{PanCam, PanCamPlugin};
+use rand::RngExt;
 const WW: u32 = 1200;
 const WH: u32 = 700;
 //sprite
@@ -13,6 +15,10 @@ const SPRITE_SCALE_FACTOR: f32 = 3.0;
 //bullet
 const BULLET_SPAWN_INTERVAL: f32 = 0.1;
 const BULLET_SPEED: f32 = 300.0;
+// WORLD
+const NUM_WORLD_DECORS: u32 = 1000;
+const WORLD_W: f32 = 3000.0;
+const WORLD_H: f32 = 2500.0;
 //colors
 const BG_COLOR: (u8, u8, u8) = (197, 204, 184);
 //player
@@ -63,8 +69,13 @@ fn main() {
         )
         //state
         .init_state::<GameState>()
+        //External plugin
+        .add_plugins(PanCamPlugin::default())
         //system
-        .add_systems(OnEnter(GameState::GameInit), (setup_camera, init_world))
+        .add_systems(
+            OnEnter(GameState::GameInit),
+            (setup_camera, init_world, spawn_world_decorations),
+        )
         .add_systems(OnEnter(GameState::Loading), load_assets)
         .add_systems(
             Update,
@@ -74,6 +85,7 @@ fn main() {
                 update_cursor_position,
                 handle_gun_input,
                 update_bullets,
+                camera_follow_player,
             )
                 .run_if(in_state(GameState::InGame)),
         )
@@ -107,7 +119,23 @@ fn load_assets(
     next_state.set(GameState::GameInit);
 }
 fn setup_camera(mut commands: Commands) {
-    commands.spawn((Camera2d, Msaa::Off));
+    commands.spawn((Camera2d, Msaa::Off)).insert(PanCam {
+        // Panning position limits (World coordinates)
+        min_x: -WORLD_W,
+        max_x: WORLD_H,
+        min_y: -WORLD_H,
+        max_y: WORLD_H,
+
+        // Zoom scaling limits
+        min_scale: 1.0,  // How far you can zoom IN (lower numbers = closer view)
+        max_scale: 10.0, // How far you can zoom OUT (higher numbers = further view)
+
+        // Other typical settings
+        grab_buttons: vec![MouseButton::Left],
+        enabled: true,
+        zoom_to_cursor: true,
+        ..default()
+    });
 }
 
 fn init_world(
@@ -179,6 +207,7 @@ fn handle_player_input(
     if delta.is_finite() && (w_key || s_key || a_key || d_key) {
         transform.translation +=
             Vec3::new(delta.x, delta.y, 0.0) * PLAYER_SPEED * time.delta_secs();
+        transform.translation.z = 10.0;
     }
 }
 
@@ -278,4 +307,45 @@ fn update_bullets(
         t.translation += dir.0.normalize() * BULLET_SPEED * time.delta_secs();
         t.translation.z = 10.0;
     }
+}
+
+fn spawn_world_decorations(
+    mut commands: Commands,
+    texture_atlas: Res<GlobalTextureAtlasHandle>,
+    image_handler: Res<GlobalSpriteSheetHandle>,
+) {
+    let mut rng = rand::rng();
+    for _ in 0..NUM_WORLD_DECORS {
+        let x = rng.random_range(-WORLD_W..WORLD_W);
+        let y = rng.random_range(-WORLD_H..WORLD_H);
+
+        commands.spawn((
+            Sprite::from_atlas_image(
+                image_handler.0.clone().unwrap(),
+                TextureAtlas {
+                    layout: texture_atlas.0.clone().unwrap(),
+                    index: rng.random_range(4..=5),
+                },
+            ),
+            Transform::from_translation(Vec3::new(x, y, 0.0))
+                .with_scale(Vec3::splat(SPRITE_SCALE_FACTOR)),
+        ));
+    }
+}
+
+fn camera_follow_player(
+    player_query: Query<&Transform, With<Player>>,
+    mut camera_query: Query<&mut Transform, (With<Camera>, Without<Player>)>,
+) {
+    let Ok(player_transform) = player_query.single() else {
+        return;
+    };
+    let Ok(mut camera_transform) = camera_query.single_mut() else {
+        return;
+    };
+    let (x, y) = (
+        player_transform.translation.x,
+        player_transform.translation.y,
+    );
+    camera_transform.translation = camera_transform.translation.lerp(Vec3::new(x, y, 0.0), 0.1);
 }
