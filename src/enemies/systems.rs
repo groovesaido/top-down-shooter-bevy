@@ -29,7 +29,7 @@ pub fn spawn_enemies(
                 image_handler.0.clone().unwrap(),
                 TextureAtlas {
                     layout: texture_atlas.0.clone().unwrap(),
-                    index: 1,
+                    index: 8,
                 },
             ),
             Transform::from_translation(Vec3::new(x, y, 1.0))

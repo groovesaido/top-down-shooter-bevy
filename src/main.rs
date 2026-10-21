@@ -1,3 +1,4 @@
+pub mod animation;
 mod bullet;
 mod constants;
 mod enemies;
@@ -9,7 +10,9 @@ mod world;
 use crate::enemies::EnemyPlugin;
 use crate::states::*;
 use crate::world::WorldPlugins;
-use crate::{bullet::BulletPlugins, gun::GunPlugin, player::PlayerPlugins};
+use crate::{
+    animation::AnimationPlugin, bullet::BulletPlugins, gun::GunPlugin, player::PlayerPlugins,
+};
 use bevy::{prelude::*, window::PrimaryWindow};
 use bevy_pancam::{PanCam, PanCamPlugin};
 use constants::*;
@@ -38,6 +41,7 @@ fn main() {
             WorldPlugins,
             ResourePlugin,
             EnemyPlugin,
+            AnimationPlugin,
             PanCamPlugin::default(),
         ))
         //states
@@ -115,6 +119,7 @@ fn update_cursor_position(
 
 fn camera_follow_player(
     player_query: Query<&Transform, With<Player>>,
+
     mut camera_query: Query<&mut Transform, (With<Camera>, Without<Player>)>,
 ) {
     let Ok(player_transform) = player_query.single() else {

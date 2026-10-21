@@ -9,33 +9,44 @@ use bevy::prelude::*;
 
 pub fn update_gun_transform(
     player_query: Query<&Transform, With<Player>>,
-    mut gun_query: Query<&mut Transform, (With<Gun>, Without<Player>)>,
+    mut gun_query: Query<(&mut Transform, &mut Sprite), (With<Gun>, Without<Player>)>,
     cursor_pos: Res<CursorPos>,
 ) {
     let Ok(player_transform) = player_query.single() else {
         return;
     };
-    let Ok(mut gun_transform) = gun_query.single_mut() else {
+
+    let Ok((mut gun_transform, mut gun_sprite)) = gun_query.single_mut() else {
         return;
     };
+
     let player_pos = player_transform.translation.truncate();
-    let cursor_pos = match cursor_pos.0 {
-        Some(pos) => pos,
-        None => player_pos,
+
+    let Some(cursor_pos) = cursor_pos.0 else {
+        return;
     };
-    //gun rotate to player
-    let angle = (player_pos.y - cursor_pos.y).atan2(player_pos.x - cursor_pos.x) + PI;
+
+    // Determine which side of the player the cursor is on
+    let facing_left = cursor_pos.x < player_pos.x;
+
+    // Keep the gun beside the player
+    let offset_x = if facing_left { -15.0 } else { 15.0 };
+    let offset_y = -5.0;
+
+    let gun_pos = player_pos + Vec2::new(offset_x, offset_y);
+
+    gun_transform.translation = Vec3::new(gun_pos.x, gun_pos.y, gun_transform.translation.z);
+
+    // Calculate rotation from the gun's position to the cursor
+    let direction = cursor_pos - gun_pos;
+
+    let angle = direction.y.atan2(direction.x);
+
     gun_transform.rotation = Quat::from_rotation_z(angle);
 
-    let offset = 20.0;
-
-    gun_transform.translation = Vec3::new(
-        player_pos.x + offset * angle.cos() + 10.0,
-        player_pos.y + offset * angle.sin() - 5.0,
-        gun_transform.translation.z,
-    );
+    // Flip the gun vertically when aiming left
+    gun_sprite.flip_y = facing_left;
 }
-
 pub fn handle_gun_input(
     mut commands: Commands,
     mouse_btn_input: Res<ButtonInput<MouseButton>>,
@@ -61,7 +72,7 @@ pub fn handle_gun_input(
                 image_handler.0.clone().unwrap(),
                 TextureAtlas {
                     layout: texture_atlas.0.clone().unwrap(),
-                    index: 3,
+                    index: 15,
                 },
             ),
             Transform::from_translation(Vec3::new(gun_pos.x, gun_pos.y, 1.0))

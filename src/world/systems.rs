@@ -1,3 +1,4 @@
+use crate::animation::components::AnimationTimer;
 use crate::constants::*;
 use crate::gun::components::*;
 use crate::player::component::Player;
@@ -6,7 +7,6 @@ use crate::states::GameState;
 use bevy::prelude::*;
 use bevy::time::Stopwatch;
 use rand::RngExt;
-
 pub fn spawn_world_decorations(
     mut commands: Commands,
     texture_atlas: Res<GlobalTextureAtlasHandle>,
@@ -22,7 +22,7 @@ pub fn spawn_world_decorations(
                 image_handler.0.clone().unwrap(),
                 TextureAtlas {
                     layout: texture_atlas.0.clone().unwrap(),
-                    index: rng.random_range(4..=5),
+                    index: rng.random_range(12..=13),
                 },
             ),
             Transform::from_translation(Vec3::new(x, y, 0.0))
@@ -49,6 +49,7 @@ pub fn init_world(
         Transform::from_scale(Vec3::splat(SPRITE_SCALE_FACTOR))
             .with_translation(Vec3::new(0.0, 0.0, 1.0)),
         Player,
+        AnimationTimer(Timer::from_seconds(0.1, TimerMode::Repeating)),
     ));
     //gun
     commands.spawn((
@@ -56,11 +57,11 @@ pub fn init_world(
             image_handler.0.clone().unwrap(),
             TextureAtlas {
                 layout: texture_atlas.0.clone().unwrap(),
-                index: 2,
+                index: 14,
             },
         ),
         Transform::from_scale(Vec3::splat(SPRITE_SCALE_FACTOR))
-            .with_translation(Vec3::new(0.0, 0.0, 2.0)),
+            .with_translation(Vec3::new(0.0, 0.0, 9.0)),
         Gun,
         GunTimer(Stopwatch::new()),
     ));
