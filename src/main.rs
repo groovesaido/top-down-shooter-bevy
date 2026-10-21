@@ -1,4 +1,6 @@
-use bevy::prelude::*;
+use std::f32::consts::PI;
+
+use bevy::{prelude::*, window::PrimaryWindow};
 const WW: u32 = 1200;
 const WH: u32 = 700;
 //sprite
@@ -28,9 +30,15 @@ struct GlobalTextureAtlasHandle(Option<Handle<TextureAtlasLayout>>);
 #[derive(Resource)]
 struct GlobalSpriteSheetHandle(Option<Handle<Image>>);
 
+#[derive(Resource)]
+struct CursorPos(Option<Vec2>);
 //componets
 #[derive(Component)]
 struct Player;
+
+#[derive(Component)]
+struct Gun;
+
 fn main() {
     App::new()
         .add_plugins(
@@ -53,11 +61,17 @@ fn main() {
         .add_systems(OnEnter(GameState::Loading), load_assets)
         .add_systems(
             Update,
-            (handle_player_input).run_if(in_state(GameState::InGame)),
+            (
+                handle_player_input,
+                update_gun_transform,
+                update_cursor_position,
+            )
+                .run_if(in_state(GameState::InGame)),
         )
         //custom resources
         .insert_resource(GlobalTextureAtlasHandle(None))
         .insert_resource(GlobalSpriteSheetHandle(None))
+        .insert_resource(CursorPos(None))
         //resources
         .insert_resource(ClearColor(Color::srgb_u8(
             BG_COLOR.0, BG_COLOR.1, BG_COLOR.2,
@@ -93,6 +107,7 @@ fn init_world(
     image_handler: Res<GlobalSpriteSheetHandle>,
     mut next_state: ResMut<NextState<GameState>>,
 ) {
+    //player
     commands.spawn((
         Sprite::from_atlas_image(
             image_handler.0.clone().unwrap(),
@@ -101,8 +116,22 @@ fn init_world(
                 index: 0,
             },
         ),
-        Transform::from_scale(Vec3::splat(SPRITE_SCALE_FACTOR)),
+        Transform::from_scale(Vec3::splat(SPRITE_SCALE_FACTOR))
+            .with_translation(Vec3::new(0.0, 0.0, 1.0)),
         Player,
+    ));
+    //gun
+    commands.spawn((
+        Sprite::from_atlas_image(
+            image_handler.0.clone().unwrap(),
+            TextureAtlas {
+                layout: texture_atlas.0.clone().unwrap(),
+                index: 2,
+            },
+        ),
+        Transform::from_scale(Vec3::splat(SPRITE_SCALE_FACTOR))
+            .with_translation(Vec3::new(0.0, 0.0, 2.0)),
+        Gun,
     ));
     next_state.set(GameState::InGame);
 }
@@ -141,4 +170,53 @@ fn handle_player_input(
         transform.translation +=
             Vec3::new(delta.x, delta.y, 0.0) * PLAYER_SPEED * time.delta_secs();
     }
+}
+
+fn update_cursor_position(
+    mut cursor_pos: ResMut<CursorPos>,
+    window_query: Query<&Window, With<PrimaryWindow>>,
+    camera_query: Query<(&Camera, &GlobalTransform)>,
+) {
+    let Ok(window) = window_query.single() else {
+        cursor_pos.0 = None;
+        return;
+    };
+    let Ok((camera, camera_transform)) = camera_query.single() else {
+        cursor_pos.0 = None;
+        return;
+    };
+    cursor_pos.0 = window.cursor_position().and_then(|cursor| {
+        camera
+            .viewport_to_world(camera_transform, cursor)
+            .ok()
+            .map(|ray| ray.origin.truncate())
+    });
+}
+fn update_gun_transform(
+    player_query: Query<&Transform, With<Player>>,
+    mut gun_query: Query<&mut Transform, (With<Gun>, Without<Player>)>,
+    cursor_pos: Res<CursorPos>,
+) {
+    let Ok(player_transform) = player_query.single() else {
+        return;
+    };
+    let Ok(mut gun_transform) = gun_query.single_mut() else {
+        return;
+    };
+    let player_pos = player_transform.translation.truncate();
+    let cursor_pos = match cursor_pos.0 {
+        Some(pos) => pos,
+        None => player_pos,
+    };
+    //gun rotate to player
+    let mut angle = (player_pos.y - cursor_pos.y).atan2(player_pos.x - cursor_pos.x) + PI;
+    gun_transform.rotation = Quat::from_rotation_z(angle);
+
+    let offset = 20.0;
+
+    gun_transform.translation = Vec3::new(
+        player_pos.x + offset * angle.cos() + 10.0,
+        player_pos.y + offset * angle.sin() - 5.0,
+        gun_transform.translation.z,
+    );
 }
