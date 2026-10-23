@@ -1316,15 +1316,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bff34eb29ff4b8a8688bc7299f14fb6b597461ca80fec03ed7d22939ab33e48f"
 
 [[package]]
-name = "bevy_pancam"
-version = "0.22.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4efa8ceb16e5c36000ddd2dea784b759551138f6a08e0049c9014c3bea9c507c"
-dependencies = [
- "bevy",
-]
-
-[[package]]
 name = "bevy_pbr"
 version = "0.20.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5280,7 +5271,6 @@ name = "top_down_shooter"
 version = "0.1.0"
 dependencies = [
  "bevy",
- "bevy_pancam",
  "rand",
 ]
 

@@ -1,7 +1,7 @@
 use crate::animation::components::AnimationTimer;
 use crate::constants::*;
 use crate::gun::components::*;
-use crate::player::component::Player;
+use crate::player::component::{Player, PlayerState};
 use crate::resources::*;
 use crate::states::GameState;
 use bevy::prelude::*;
@@ -50,6 +50,7 @@ pub fn init_world(
             .with_translation(Vec3::new(0.0, 0.0, 1.0)),
         Player,
         AnimationTimer(Timer::from_seconds(0.1, TimerMode::Repeating)),
+        PlayerState::default(),
     ));
     //gun
     commands.spawn((

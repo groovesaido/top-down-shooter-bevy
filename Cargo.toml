@@ -5,5 +5,4 @@ edition = "2024"
 
 [dependencies]
 bevy = { version = "0.20.0", features = ["debug"] }
-bevy_pancam = "0.22.0"
 rand = "0.10.3"

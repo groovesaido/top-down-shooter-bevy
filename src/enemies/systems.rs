@@ -7,13 +7,8 @@ pub fn spawn_enemies(
     mut commands: Commands,
     texture_atlas: ResMut<GlobalTextureAtlasHandle>,
     image_handler: ResMut<GlobalSpriteSheetHandle>,
-    player_query: Query<&Transform, With<Player>>,
-    mut enemy_query: Query<&mut Transform, (With<Enemy>, Without<Player>)>,
+    enemy_query: Query<&mut Transform, (With<Enemy>, Without<Player>)>,
 ) {
-    let Ok(player_transform) = player_query.single() else {
-        return;
-    };
-
     let num_enemies = enemy_query.iter().len();
     let enemy_spawn_count = (MAX_OF_ENEMIES - num_enemies).min(10);
     if num_enemies > MAX_OF_ENEMIES {

@@ -8,13 +8,13 @@ mod resources;
 mod states;
 mod world;
 use crate::enemies::EnemyPlugin;
+use crate::player::systems::handle_player_input;
 use crate::states::*;
 use crate::world::WorldPlugins;
 use crate::{
     animation::AnimationPlugin, bullet::BulletPlugins, gun::GunPlugin, player::PlayerPlugins,
 };
-use bevy::{prelude::*, window::PrimaryWindow};
-use bevy_pancam::{PanCam, PanCamPlugin};
+use bevy::{input::mouse::MouseWheel, prelude::*, window::PrimaryWindow};
 use constants::*;
 use player::component::Player;
 use resources::*;
@@ -42,7 +42,6 @@ fn main() {
             ResourePlugin,
             EnemyPlugin,
             AnimationPlugin,
-            PanCamPlugin::default(),
         ))
         //states
         .init_state::<GameState>()
@@ -51,7 +50,12 @@ fn main() {
         .add_systems(OnEnter(GameState::Loading), load_assets)
         .add_systems(
             Update,
-            (update_cursor_position, camera_follow_player).run_if(in_state(GameState::InGame)),
+            (
+                update_cursor_position,
+                camera_zoom,
+                camera_follow_player.after(handle_player_input),
+            )
+                .run_if(in_state(GameState::InGame)),
         )
         //resources
         .insert_resource(ClearColor(Color::srgb_u8(
@@ -61,21 +65,7 @@ fn main() {
 }
 
 fn setup_camera(mut commands: Commands) {
-    commands.spawn((Camera2d, Msaa::Off)).insert(PanCam {
-        // Panning position limits (World coordinates)
-        min_x: -WORLD_W,
-        max_x: WORLD_H,
-        min_y: -WORLD_H,
-        max_y: WORLD_H,
-
-        // Zoom scaling limits
-        min_scale: 1.0,  // How far you can zoom IN (lower numbers = closer view)
-        max_scale: 10.0, // How far you can zoom OUT (higher numbers = further view)
-
-        // Other typical settings
-        grab_buttons: vec![MouseButton::Right],
-        ..default()
-    });
+    commands.spawn((Camera2d, Msaa::Off));
 }
 pub fn load_assets(
     assets_server: Res<AssetServer>,
@@ -141,4 +131,20 @@ fn camera_follow_player(
 
     camera_transform.translation.x = new_position.x;
     camera_transform.translation.y = new_position.y;
+}
+
+fn camera_zoom(
+    mut camera_query: Query<&mut Projection, With<Camera2d>>,
+    mut scroll_event: MessageReader<MouseWheel>,
+) {
+    let Ok(mut projection) = camera_query.single_mut() else {
+        return;
+    };
+    for event in scroll_event.read() {
+        let zoom_speed = 0.1;
+        if let Projection::Orthographic(orthographic) = &mut *projection {
+            orthographic.scale *= 1.0 - event.y * zoom_speed;
+            orthographic.scale = orthographic.scale.clamp(1.0, 10.0);
+        }
+    }
 }

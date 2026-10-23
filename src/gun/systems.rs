@@ -21,6 +21,8 @@ pub fn update_gun_transform(
     let player_pos = player_transform.translation.truncate();
 
     let Some(cursor_pos) = cursor_pos.0 else {
+        gun_transform.translation.x = player_pos.x + 15.0;
+        gun_transform.translation.y = player_pos.y - 5.0;
         return;
     };
 
@@ -28,7 +30,7 @@ pub fn update_gun_transform(
     let facing_left = cursor_pos.x < player_pos.x;
 
     // Keep the gun beside the player
-    let offset_x = if facing_left { -15.0 } else { 20.0 };
+    let offset_x = if facing_left { -15.0 } else { 15.0 };
     let offset_y = -10.0;
 
     let gun_pos = player_pos + Vec2::new(offset_x, offset_y);
