@@ -15,3 +15,11 @@ pub fn update_bullets(
         t.translation.z = 10.0;
     }
 }
+
+pub fn despawn_old_bullets(mut commands: Commands, bullet_query: Query<(&SpawnInstant, Entity)>) {
+    for (instant, entity) in bullet_query.iter() {
+        if instant.0.elapsed().as_secs_f32() > BULLET_TIME {
+            commands.entity(entity).despawn();
+        }
+    }
+}

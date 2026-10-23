@@ -9,7 +9,9 @@ pub const SPRITE_SHEET_H: u32 = 4;
 pub const SPRITE_SCALE_FACTOR: f32 = 3.0;
 //bullet
 pub const BULLET_SPAWN_INTERVAL: f32 = 0.1;
-pub const BULLET_SPEED: f32 = 350.0;
+pub const BULLET_SPEED: f32 = 500.0;
+pub const BULLET_DAMAGE: f32 = 100.0;
+pub const BULLET_TIME: f32 = 1.5;
 // WORLD
 pub const NUM_WORLD_DECORS: u32 = 1000;
 pub const WORLD_W: f32 = 3000.0;
@@ -23,3 +25,4 @@ pub const PLAYER_SPEED: f32 = 200.0;
 pub const MAX_OF_ENEMIES: usize = 500;
 pub const ENEMY_SPAWN_INTERVAL: f32 = 1.0;
 pub const ENEMY_SPEED: f32 = 150.0;
+pub const ENEMY_HEALTH: f32 = 100.0;

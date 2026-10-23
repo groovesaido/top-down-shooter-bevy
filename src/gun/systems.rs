@@ -1,3 +1,5 @@
+use std::time::Instant;
+
 use super::components::*;
 use crate::bullet::componets::*;
 use crate::constants::*;
@@ -80,6 +82,7 @@ pub fn handle_gun_input(
             Transform::from_translation(Vec3::new(muzzle_position.x, muzzle_position.y, 1.0))
                 .with_scale(Vec3::splat(SPRITE_SCALE_FACTOR)),
             Bullet,
+            SpawnInstant(Instant::now()),
             BulletDirection(*bullet_direction),
         ));
     }

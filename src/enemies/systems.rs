@@ -10,6 +10,7 @@ pub fn spawn_enemies(
     mut commands: Commands,
     texture_atlas: ResMut<GlobalTextureAtlasHandle>,
     image_handler: ResMut<GlobalSpriteSheetHandle>,
+
     enemy_query: Query<&mut Transform, (With<Enemy>, Without<Player>)>,
 ) {
     let num_enemies = enemy_query.iter().len();
@@ -32,8 +33,8 @@ pub fn spawn_enemies(
             ),
             Transform::from_translation(Vec3::new(x, y, 1.0))
                 .with_scale(Vec3::splat(SPRITE_SCALE_FACTOR)),
-            Enemy,
-            AnimationTimer(Timer::from_seconds(0.1, TimerMode::Repeating)),
+            Enemy::default(),
+            AnimationTimer(Timer::from_seconds(0.08, TimerMode::Repeating)),
         ));
     }
 }
@@ -57,6 +58,17 @@ pub fn update_enemy_transform(
             sprite.flip_x = false;
         } else {
             sprite.flip_x = true;
+        }
+    }
+}
+
+pub fn despawn_dead_enemies(mut commands: Commands, enemy_query: Query<(&Enemy, Entity)>) {
+    if enemy_query.is_empty() {
+        return;
+    }
+    for (enemy, entity) in enemy_query.iter() {
+        if enemy.health <= 0.0 {
+            commands.entity(entity).despawn();
         }
     }
 }

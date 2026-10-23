@@ -14,6 +14,7 @@ impl Plugin for EnemyPlugin {
             (
                 spawn_enemies.run_if(on_timer(Duration::from_secs_f32(ENEMY_SPAWN_INTERVAL))),
                 update_enemy_transform,
+                despawn_dead_enemies,
             )
                 .run_if(in_state(GameState::InGame)),
         );

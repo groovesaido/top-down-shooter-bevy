@@ -1,5 +1,6 @@
 pub mod animation;
 mod bullet;
+pub mod collisions;
 mod constants;
 pub mod enemies;
 mod gun;
@@ -7,6 +8,7 @@ mod player;
 mod resources;
 mod states;
 mod world;
+use crate::collisions::CollisionPlugin;
 use crate::enemies::EnemyPlugin;
 use crate::player::systems::handle_player_input;
 use crate::states::*;
@@ -42,6 +44,7 @@ fn main() {
             ResourePlugin,
             EnemyPlugin,
             AnimationPlugin,
+            CollisionPlugin,
         ))
         //states
         .init_state::<GameState>()
