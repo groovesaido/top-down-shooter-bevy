@@ -1,5 +1,3 @@
-use std::f32::consts::PI;
-
 use super::components::*;
 use crate::bullet::componets::*;
 use crate::constants::*;
@@ -30,12 +28,12 @@ pub fn update_gun_transform(
     let facing_left = cursor_pos.x < player_pos.x;
 
     // Keep the gun beside the player
-    let offset_x = if facing_left { -15.0 } else { 15.0 };
-    let offset_y = -5.0;
+    let offset_x = if facing_left { -15.0 } else { 20.0 };
+    let offset_y = -10.0;
 
     let gun_pos = player_pos + Vec2::new(offset_x, offset_y);
 
-    gun_transform.translation = Vec3::new(gun_pos.x, gun_pos.y, gun_transform.translation.z);
+    gun_transform.translation = Vec3::new(gun_pos.x, gun_pos.y, 9.0);
 
     // Calculate rotation from the gun's position to the cursor
     let direction = cursor_pos - gun_pos;
@@ -58,12 +56,14 @@ pub fn handle_gun_input(
     let Ok((gun_transform, mut gun_timer)) = gun_query.single_mut() else {
         return;
     };
-    let gun_pos = gun_transform.translation.truncate();
+
     gun_timer.0.tick(time.delta());
     if !mouse_btn_input.pressed(MouseButton::Left) {
         return;
     }
     let bullet_direction = gun_transform.local_x();
+    let barrel_lenght = 16.0;
+    let muzzle_position = gun_transform.translation + bullet_direction * barrel_lenght;
 
     if gun_timer.0.elapsed_secs() >= BULLET_SPAWN_INTERVAL {
         gun_timer.0.reset();
@@ -75,7 +75,7 @@ pub fn handle_gun_input(
                     index: 15,
                 },
             ),
-            Transform::from_translation(Vec3::new(gun_pos.x, gun_pos.y, 1.0))
+            Transform::from_translation(Vec3::new(muzzle_position.x, muzzle_position.y, 1.0))
                 .with_scale(Vec3::splat(SPRITE_SCALE_FACTOR)),
             Bullet,
             BulletDirection(*bullet_direction),

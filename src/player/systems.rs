@@ -34,6 +34,6 @@ pub fn handle_player_input(
     if delta.is_finite() && (w_key || s_key || a_key || d_key) {
         transform.translation +=
             Vec3::new(delta.x, delta.y, 0.0) * PLAYER_SPEED * time.delta_secs();
-        transform.translation.z = 10.0;
+        transform.translation.z = 2.0;
     }
 }

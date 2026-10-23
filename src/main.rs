@@ -119,6 +119,7 @@ fn update_cursor_position(
 
 fn camera_follow_player(
     player_query: Query<&Transform, With<Player>>,
+    time: Res<Time>,
 
     mut camera_query: Query<&mut Transform, (With<Camera>, Without<Player>)>,
 ) {
@@ -128,9 +129,16 @@ fn camera_follow_player(
     let Ok(mut camera_transform) = camera_query.single_mut() else {
         return;
     };
-    let (x, y) = (
-        player_transform.translation.x,
-        player_transform.translation.y,
-    );
-    camera_transform.translation = camera_transform.translation.lerp(Vec3::new(x, y, 0.0), 0.1);
+    let target = player_transform.translation.truncate();
+
+    // Frame-rate-independent smoothing
+    let smoothing = 8.0;
+    let t = 1.0 - (-smoothing * time.delta_secs()).exp();
+
+    let current = camera_transform.translation.truncate();
+
+    let new_position = current.lerp(target, t);
+
+    camera_transform.translation.x = new_position.x;
+    camera_transform.translation.y = new_position.y;
 }
