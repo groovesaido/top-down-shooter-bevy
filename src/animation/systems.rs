@@ -3,6 +3,7 @@ use bevy::prelude::*;
 use crate::{
     animation::components::AnimationTimer,
     constants::SPRITE_SHEET_W,
+    enemies::components::Enemy,
     player::component::{Player, PlayerState},
 };
 
@@ -31,6 +32,20 @@ pub fn animate_player(
                 PlayerState::Moving => 4,
             };
             atlas.index = base_sprite_index + (atlas.index + 1) % SPRITE_SHEET_W as usize;
+        }
+    }
+}
+
+pub fn animate_enemy(mut enemy_query: Query<(&mut Sprite, &AnimationTimer), With<Enemy>>) {
+    if enemy_query.is_empty() {
+        return;
+    }
+
+    for (mut sprite, timer) in enemy_query.iter_mut() {
+        if timer.just_finished() {
+            if let Some(atlas) = sprite.texture_atlas.as_mut() {
+                atlas.index = 8 + (atlas.index + 1) % SPRITE_SHEET_W as usize;
+            }
         }
     }
 }

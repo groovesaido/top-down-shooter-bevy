@@ -1,7 +1,7 @@
 pub mod animation;
 mod bullet;
 mod constants;
-mod enemies;
+pub mod enemies;
 mod gun;
 mod player;
 mod resources;

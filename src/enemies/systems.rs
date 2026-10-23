@@ -1,7 +1,10 @@
 use bevy::prelude::*;
 use rand::RngExt;
 
-use crate::{constants::*, enemies::components::Enemy, player::component::Player, resources::*};
+use crate::{
+    animation::components::AnimationTimer, constants::*, enemies::components::Enemy,
+    player::component::Player, resources::*,
+};
 
 pub fn spawn_enemies(
     mut commands: Commands,
@@ -30,6 +33,7 @@ pub fn spawn_enemies(
             Transform::from_translation(Vec3::new(x, y, 1.0))
                 .with_scale(Vec3::splat(SPRITE_SCALE_FACTOR)),
             Enemy,
+            AnimationTimer(Timer::from_seconds(0.1, TimerMode::Repeating)),
         ));
     }
 }

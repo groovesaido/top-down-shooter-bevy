@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use bevy::{prelude::*, time::common_conditions::on_timer};
-mod components;
+pub mod components;
 mod systems;
 use systems::*;
 
