@@ -35,7 +35,7 @@ pub fn spawn_enemies(
 }
 
 pub fn update_enemy_transform(
-    mut enemy_query: Query<&mut Transform, (With<Enemy>, Without<Player>)>,
+    mut enemy_query: Query<(&mut Transform, &mut Sprite), (With<Enemy>, Without<Player>)>,
     player_query: Query<&Transform, With<Player>>,
     time: Res<Time>,
 ) {
@@ -44,8 +44,15 @@ pub fn update_enemy_transform(
     };
     let player_pos = player_transform.translation;
 
-    for mut transform in enemy_query.iter_mut() {
+    for (mut transform, mut sprite) in enemy_query.iter_mut() {
         let dir = (player_pos - transform.translation).normalize();
         transform.translation += dir * ENEMY_SPEED * time.delta_secs();
+
+        //flip sprite on x-axis
+        if transform.translation.x < player_pos.x {
+            sprite.flip_x = false;
+        } else {
+            sprite.flip_x = true;
+        }
     }
 }
